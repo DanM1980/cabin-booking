@@ -8,10 +8,12 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   // הגדרת basePath לתת-ספרייה
-  // שנה את '/cabin' לנתיב הרצוי שלך
-  basePath: '/cabin',
-  // תמיכה ב-static export אם צריך
-  output: 'standalone',
+  basePath: '/beeri',
+  // Static export ל-GitHub Pages
+  output: 'export',
+  images: {
+    unoptimized: true, // נדרש ל-static export
+  },
 }
 
 module.exports = nextConfig
