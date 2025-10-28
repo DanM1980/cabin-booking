@@ -28,7 +28,10 @@ npm run deploy
 ### שלב 5: העתקה
 ✓ מעתיק את `out/` → `ahuzat-haela/beeri/`
 
-### שלב 6: Commit & Push
+### שלב 6: יצירת .nojekyll
+✓ יוצר קובץ `.nojekyll` (מונע מ-GitHub Pages להתעלם מתיקיות `_next`)
+
+### שלב 7: Commit & Push
 ✓ עושה commit ו-push ל-`gh-pages`
 
 ---

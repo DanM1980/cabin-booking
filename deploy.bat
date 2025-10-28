@@ -13,13 +13,13 @@ REM הגדרות
 set TARGET_PROJECT=C:\Users\DanM\Documents\React\Ella\ahuzat-haela
 set TARGET_SUBDIR=beeri
 
-echo [1/6] Checking target project...
+echo [1/7] Checking target project...
 if not exist "%TARGET_PROJECT%" (
     echo ERROR: Target project not found at %TARGET_PROJECT%
     exit /b 1
 )
 
-echo [2/6] Pulling latest changes from remote...
+echo [2/7] Pulling latest changes from remote...
 cd /d "%TARGET_PROJECT%"
 git pull origin gh-pages
 if errorlevel 1 (
@@ -27,7 +27,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [3/6] Building current project...
+echo [3/7] Building current project...
 cd /d "%~dp0"
 call npm run build
 if errorlevel 1 (
@@ -35,19 +35,25 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [4/6] Cleaning target directory...
+echo [4/7] Cleaning target directory...
 if exist "%TARGET_PROJECT%\%TARGET_SUBDIR%" (
     rmdir /s /q "%TARGET_PROJECT%\%TARGET_SUBDIR%"
 )
 
-echo [5/6] Copying build files...
+echo [5/7] Copying build files...
 xcopy /E /I /Y "out" "%TARGET_PROJECT%\%TARGET_SUBDIR%"
 if errorlevel 1 (
     echo ERROR: Failed to copy files
     exit /b 1
 )
 
-echo [6/6] Committing and pushing changes...
+echo [6/7] Creating .nojekyll file (for GitHub Pages)...
+type nul > "%TARGET_PROJECT%\%TARGET_SUBDIR%\.nojekyll"
+if errorlevel 1 (
+    echo WARNING: Failed to create .nojekyll file
+)
+
+echo [7/7] Committing and pushing changes...
 cd /d "%TARGET_PROJECT%"
 git add %TARGET_SUBDIR%
 git commit -m "Update beeri - cabin booking system"
