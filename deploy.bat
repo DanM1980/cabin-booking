@@ -63,7 +63,7 @@ echo   Deploy completed successfully!
 echo ========================================
 echo.
 echo The site should be live at:
-echo https://your-domain.com/beeri
+echo https://ellaestate.com/beeri
 echo.
 
 cd /d "%~dp0"

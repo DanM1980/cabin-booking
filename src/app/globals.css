@@ -5,23 +5,7 @@
 @layer base {
   body {
     @apply min-h-screen;
-    background-image: url('/cabin-background.png');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
-  }
-
-  /* Overlay לבן עם שקיפות 50% */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.5);
-    z-index: -1;
+    /* רקע נוסף דינמית ב-layout.tsx */
   }
 }
 
