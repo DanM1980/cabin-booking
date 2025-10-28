@@ -59,7 +59,20 @@ export default function BookingForm({ date, onSubmit, onCancel }: BookingFormPro
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 relative">
+      {/* כפתור סגירה */}
+      <button
+        type="button"
+        onClick={onCancel}
+        disabled={isSubmitting}
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+        aria-label="סגור"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
       <h2 className="text-2xl font-bold mb-2 text-center text-gray-800">הזמנת יום</h2>
       <p className="text-gray-700 text-center mb-6 font-medium">{formatDateHebrew(date)}</p>
 
@@ -113,28 +126,16 @@ export default function BookingForm({ date, onSubmit, onCancel }: BookingFormPro
           {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
         </div>
 
-        <div className="flex gap-3 pt-4">
+        <div className="pt-4">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="btn btn-primary flex-1"
+            className="btn btn-primary w-full"
           >
             {isSubmitting ? 'מבצע הזמנה...' : 'הזמן עכשיו'}
           </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="btn btn-secondary"
-          >
-            ביטול
-          </button>
         </div>
       </form>
-
-      <p className="text-xs text-gray-600 text-center mt-4">
-        * שדות חובה
-      </p>
     </div>
   );
 }

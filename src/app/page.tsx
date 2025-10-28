@@ -39,6 +39,9 @@ export default function HomePage() {
   const [isGuestbookFormOpen, setIsGuestbookFormOpen] = useState(false);
   const [isGuestbookLoading, setIsGuestbookLoading] = useState(false);
 
+  // מעקב אחרי מצב פופאפים לטיפול בכפתור חזור
+  const [hasModalHistoryEntry, setHasModalHistoryEntry] = useState(false);
+
   // טעינת נתונים לחודש
   const loadMonthData = async (month: Date) => {
     try {
@@ -175,6 +178,48 @@ export default function HomePage() {
       guestbookSubscription.unsubscribe();
     };
   }, [currentMonth]); // תלוי ב-currentMonth כדי לעדכן את המנוי כשמשנים חודש
+
+  // טיפול בכפתור חזור - סגירת פופאפים
+  useEffect(() => {
+    const isAnyModalOpen = isModalOpen || isGuestbookFormOpen;
+
+    // כשנפתח מודאל - נוסיף entry להיסטוריה
+    if (isAnyModalOpen && !hasModalHistoryEntry) {
+      window.history.pushState({ modal: true }, '');
+      setHasModalHistoryEntry(true);
+    }
+
+    // כשנסגר מודאל ידנית - רק נעדכן את ה-flag
+    if (!isAnyModalOpen && hasModalHistoryEntry) {
+      setHasModalHistoryEntry(false);
+    }
+  }, [isModalOpen, isGuestbookFormOpen, hasModalHistoryEntry]);
+
+  // האזנה לכפתור חזור
+  useEffect(() => {
+    const handlePopState = () => {
+      const isAnyModalOpen = isModalOpen || isGuestbookFormOpen;
+
+      if (isAnyModalOpen) {
+        // אם יש מודאל פתוח - נסגור אותו
+        if (isModalOpen) {
+          setIsModalOpen(false);
+          setSelectedDate(undefined);
+          setSelectedDateInfo(null);
+        }
+        if (isGuestbookFormOpen) {
+          setIsGuestbookFormOpen(false);
+        }
+        setHasModalHistoryEntry(false);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isModalOpen, isGuestbookFormOpen]);
 
   const handleMonthChange = (month: Date) => {
     // מונע דפדוף לחודשים בעבר

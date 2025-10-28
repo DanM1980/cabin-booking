@@ -33,7 +33,20 @@ export default function GuestbookForm({ onSubmit, onCancel }: GuestbookFormProps
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 relative">
+      {/* כפתור סגירה */}
+      <button
+        type="button"
+        onClick={onCancel}
+        disabled={isLoading}
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+        aria-label="סגור"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
       <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">
         ✍️ כתוב הודעה בספר האורחים
       </h2>
@@ -76,21 +89,13 @@ export default function GuestbookForm({ onSubmit, onCancel }: GuestbookFormProps
           </p>
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="pt-4">
           <button
             type="submit"
             disabled={isLoading || !name.trim() || !message.trim()}
-            className="btn btn-primary flex-1"
+            className="btn btn-primary w-full"
           >
             {isLoading ? 'שולח...' : 'שלח הודעה'}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="btn btn-secondary flex-1"
-          >
-            ביטול
           </button>
         </div>
       </form>

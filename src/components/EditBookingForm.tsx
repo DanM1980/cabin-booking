@@ -74,7 +74,20 @@ export default function EditBookingForm({ date, booking, onUpdate, onCancel, onC
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 relative">
+      {/* כפתור סגירה */}
+      <button
+        type="button"
+        onClick={onClose}
+        disabled={isSubmitting}
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+        aria-label="סגור"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
       <h2 className="text-2xl font-bold mb-2 text-center text-gray-800">עריכת הזמנה</h2>
       <p className="text-gray-700 text-center mb-6 font-medium">{formatDateHebrew(date)}</p>
 
@@ -131,23 +144,13 @@ export default function EditBookingForm({ date, booking, onUpdate, onCancel, onC
             </div>
 
             <div className="flex flex-col gap-3 pt-4">
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="btn btn-primary flex-1"
-                >
-                  {isSubmitting ? 'מעדכן...' : 'עדכן הזמנה'}
-                </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  disabled={isSubmitting}
-                  className="btn btn-secondary"
-                >
-                  סגור
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn btn-primary w-full"
+              >
+                {isSubmitting ? 'מעדכן...' : 'עדכן הזמנה'}
+              </button>
 
               <button
                 type="button"
@@ -159,10 +162,6 @@ export default function EditBookingForm({ date, booking, onUpdate, onCancel, onC
               </button>
             </div>
           </form>
-
-          <p className="text-xs text-gray-600 text-center mt-4">
-            * שדות חובה
-          </p>
         </>
       ) : (
         <div className="space-y-6">
