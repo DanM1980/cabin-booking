@@ -11,6 +11,8 @@
 - ⚪ **אפור** = יום סגור (לא ניתן להזמין)
 - ✏️ עריכת הזמנות קיימות
 - ❌ ביטול הזמנות (עם אישור)
+- 📖 ספר אורחים (כתיבת הודעות + מחיקה)
+- ⚡ **עדכונים בזמן אמת** (Realtime!)
 - 📱 רספונסיבי מלא
 - 🎨 תמונת רקע יפה עם שקיפויות
 
@@ -76,7 +78,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 - [Pexels](https://www.pexels.com/search/cabin/)
 - [Pixabay](https://pixabay.com/images/search/camping/)
 
-### 5. הרצה!
+### 5. הפעלת Realtime (חשוב!)
+
+עבור ל-Supabase Dashboard → **Database** → **Replication**
+הפעל Realtime עבור:
+- ✅ `calendar`
+- ✅ `bookings`
+- ✅ `guestbook`
+
+**תיעוד מלא:** `SUPABASE-REALTIME-SETUP.md`
+
+### 6. הרצה!
 
 ```bash
 npm run dev

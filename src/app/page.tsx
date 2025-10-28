@@ -117,6 +117,65 @@ export default function HomePage() {
     loadGuestbook();
   }, [currentMonth]);
 
+  // Real-time subscriptions
+  useEffect(() => {
+    // מנוי לשינויים בלוח השנה
+    const calendarSubscription = supabase
+      .channel('calendar-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'calendar',
+        },
+        () => {
+          // כשיש שינוי, טוען מחדש את נתוני החודש
+          loadMonthData(currentMonth);
+        }
+      )
+      .subscribe();
+
+    // מנוי לשינויים בהזמנות
+    const bookingsSubscription = supabase
+      .channel('bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+        },
+        () => {
+          loadMonthData(currentMonth);
+        }
+      )
+      .subscribe();
+
+    // מנוי לשינויים בספר אורחים
+    const guestbookSubscription = supabase
+      .channel('guestbook-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'guestbook',
+        },
+        () => {
+          loadGuestbook();
+        }
+      )
+      .subscribe();
+
+    // ניקוי subscriptions כשהקומפוננטה נסגרת
+    return () => {
+      calendarSubscription.unsubscribe();
+      bookingsSubscription.unsubscribe();
+      guestbookSubscription.unsubscribe();
+    };
+  }, [currentMonth]); // תלוי ב-currentMonth כדי לעדכן את המנוי כשמשנים חודש
+
   const handleMonthChange = (month: Date) => {
     // מונע דפדוף לחודשים בעבר
     const today = new Date();

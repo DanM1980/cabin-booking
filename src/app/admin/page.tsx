@@ -38,6 +38,52 @@ export default function AdminPage() {
     }
   }, [isAuthenticated, currentMonth]);
 
+  // Real-time subscriptions
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // מנוי לשינויים בלוח השנה
+    const calendarSubscription = supabase
+      .channel('admin-calendar-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'calendar',
+        },
+        () => {
+          // כשיש שינוי, טוען מחדש
+          loadMonthData(currentMonth);
+          loadStats();
+        }
+      )
+      .subscribe();
+
+    // מנוי לשינויים בהזמנות
+    const bookingsSubscription = supabase
+      .channel('admin-bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+        },
+        () => {
+          loadMonthData(currentMonth);
+          loadStats();
+        }
+      )
+      .subscribe();
+
+    // ניקוי subscriptions
+    return () => {
+      calendarSubscription.unsubscribe();
+      bookingsSubscription.unsubscribe();
+    };
+  }, [isAuthenticated, currentMonth]);
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (loginAdmin(password)) {
