@@ -579,7 +579,17 @@ export default function AdminPage() {
         </div>
 
         {/* לוח שנה */}
-        {isLoading ? <LoadingSpinner /> : renderCalendar()}
+        <div className="relative min-h-[400px]">
+          {/* Loader overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+              <LoadingSpinner />
+            </div>
+          )}
+
+          {/* לוח שנה - תמיד מוצג */}
+          {renderCalendar()}
+        </div>
       </main>
 
       {/* טוסט */}

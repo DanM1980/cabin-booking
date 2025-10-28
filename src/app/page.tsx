@@ -457,51 +457,55 @@ export default function HomePage() {
           </div>
 
           {/* לוח שנה */}
-          <div className="card">
-            {isLoading ? (
-              <LoadingSpinner />
-            ) : (
-              <div className="flex justify-center">
-                <DayPicker
-                  mode="single"
-                  selected={selectedDate}
-                  onDayClick={handleDayClick}
-                  onMonthChange={handleMonthChange}
-                  month={currentMonth}
-                  locale={he}
-                  fromDate={new Date()}
-                  modifiers={{
-                    open: openDays,
-                    booked: bookedDays,
-                  }}
-                  modifiersStyles={{
-                    open: {
-                      backgroundColor: '#dcfce7',
-                      color: '#166534',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                    },
-                    booked: {
-                      backgroundColor: '#fee2e2',
-                      color: '#991b1b',
-                      fontWeight: 'bold',
-                      cursor: 'pointer',
-                    },
-                  }}
-                  disabled={(date) => {
-                    const dateStr = formatDateForDB(date);
-                    const dayInfo = daysMap.get(dateStr);
-                    // השבת תאריכים בעבר, ימים שלא קיימים, או ימים סגורים
-                    return isDateInPast(date) || !dayInfo || dayInfo.status === 'closed';
-                  }}
-                  className="rtl-calendar"
-                />
+          <div className="card relative min-h-[400px]">
+            {/* Loader overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+                <LoadingSpinner />
               </div>
             )}
+
+            {/* לוח שנה - תמיד מוצג */}
+            <div className="flex justify-center">
+              <DayPicker
+                mode="single"
+                selected={selectedDate}
+                onDayClick={handleDayClick}
+                onMonthChange={handleMonthChange}
+                month={currentMonth}
+                locale={he}
+                fromDate={new Date()}
+                modifiers={{
+                  open: openDays,
+                  booked: bookedDays,
+                }}
+                modifiersStyles={{
+                  open: {
+                    backgroundColor: '#dcfce7',
+                    color: '#166534',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  },
+                  booked: {
+                    backgroundColor: '#fee2e2',
+                    color: '#991b1b',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  },
+                }}
+                disabled={(date) => {
+                  const dateStr = formatDateForDB(date);
+                  const dayInfo = daysMap.get(dateStr);
+                  // השבת תאריכים בעבר, ימים שלא קיימים, או ימים סגורים
+                  return isDateInPast(date) || !dayInfo || dayInfo.status === 'closed';
+                }}
+                className="rtl-calendar"
+              />
+            </div>
           </div>
 
           {/* ספר אורחים */}
-          <div className="card">
+          <div className="card relative min-h-[200px]">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-800">
                 📖 ספר אורחים
@@ -514,9 +518,15 @@ export default function HomePage() {
               </button>
             </div>
 
-            {isGuestbookLoading ? (
-              <LoadingSpinner />
-            ) : guestbookEntries.length === 0 ? (
+            {/* Loader overlay */}
+            {isGuestbookLoading && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+                <LoadingSpinner />
+              </div>
+            )}
+
+            {/* תוכן - תמיד מוצג */}
+            {guestbookEntries.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p className="text-lg mb-2">עדיין אין הודעות בספר האורחים</p>
                 <p className="text-sm">היה הראשון לשתף את החוויה שלך!</p>
