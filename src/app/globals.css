@@ -1,0 +1,290 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply min-h-screen;
+    background-image: url('/cabin-background.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+
+  /* Overlay לבן עם שקיפות 50% */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.5);
+    z-index: -1;
+  }
+}
+
+@layer components {
+  /* כפתורים */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary/90 active:scale-95 shadow-md;
+  }
+
+  .btn-secondary {
+    @apply bg-white/60 text-gray-800 hover:bg-white/80 border border-gray-300 active:scale-95 shadow-sm;
+  }
+
+  .btn-danger {
+    @apply bg-danger text-white hover:bg-danger/90 active:scale-95 shadow-md;
+  }
+
+  /* שדות קלט */
+  .input {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg bg-white/80 backdrop-blur-sm
+           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+           transition-all duration-200;
+  }
+
+  /* קלפים עם שקיפות 40% */
+  .card {
+    @apply bg-white/40 backdrop-blur-md rounded-xl shadow-lg p-6;
+  }
+
+  /* הדר עם שקיפות 95% ו-blur */
+  .header {
+    @apply bg-white/95 backdrop-blur-lg shadow-sm;
+  }
+
+  /* ימים בלוח שנה */
+  .calendar-day {
+    @apply w-12 h-12 flex items-center justify-center rounded-lg font-medium 
+           cursor-pointer transition-all duration-200;
+  }
+
+  .calendar-day-open {
+    @apply bg-green-100 text-green-800 hover:bg-green-200 hover:scale-105 shadow-sm;
+  }
+
+  .calendar-day-booked {
+    @apply bg-red-100 text-red-800 hover:bg-red-200 hover:scale-105 shadow-sm cursor-pointer;
+  }
+
+  .calendar-day-closed {
+    @apply bg-gray-100 text-gray-400 cursor-not-allowed opacity-60;
+  }
+
+  .calendar-day-disabled {
+    @apply bg-gray-50 text-gray-300 cursor-not-allowed opacity-40;
+  }
+
+  /* טוסט (הודעות) */
+  .toast {
+    @apply fixed top-4 left-1/2 transform -translate-x-1/2 z-[10000] 
+           px-6 py-3 rounded-lg shadow-2xl backdrop-blur-md
+           animate-slide-down font-medium;
+  }
+
+  .toast-success {
+    @apply bg-green-500/95 text-white;
+  }
+
+  .toast-error {
+    @apply bg-red-500/95 text-white;
+  }
+
+  /* מודאל */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-[9000] 
+           flex items-center justify-center p-4;
+  }
+
+  .modal-content {
+    @apply bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl 
+           max-w-md w-full max-h-[90vh] overflow-y-auto;
+  }
+
+  /* אגדה */
+  .legend-item {
+    @apply flex items-center gap-2;
+  }
+
+  .legend-box {
+    @apply w-4 h-4 rounded border-2;
+  }
+}
+
+@layer utilities {
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -20px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.3s ease-out;
+  }
+}
+
+/* RTL Support */
+html[dir='rtl'] {
+  direction: rtl;
+}
+
+/* react-day-picker customization */
+.rdp {
+  --rdp-cell-size: 48px;
+  --rdp-accent-color: #10b981;
+  --rdp-background-color: #dcfce7;
+  direction: rtl;
+  font-family: inherit;
+}
+
+.rdp-months {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.rdp-month {
+  width: 100%;
+  max-width: 100%;
+}
+
+.rdp-table {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.rdp-cell {
+  padding: 3px;
+}
+
+.rdp-button {
+  width: 100%;
+  height: 100%;
+  min-width: 42px;
+  min-height: 42px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* מרווחים מיוחדים ליומן הראשי */
+.rtl-calendar .rdp-cell {
+  padding: 5px;
+}
+
+/* הגדלת טקסט ימי השבוע ביומן הראשי */
+.rtl-calendar .rdp-head_cell {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* כפתורי ניווט disabled */
+.rdp-nav_button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background-color: #e5e7eb !important;
+  color: #9ca3af !important;
+}
+
+/* התאמה למסכים גדולים */
+@media (min-width: 640px) {
+  .rdp {
+    --rdp-cell-size: 60px;
+  }
+  
+  .rdp-button {
+    min-width: 50px;
+    min-height: 50px;
+    font-size: 1.1rem;
+  }
+  
+  .rtl-calendar .rdp-cell {
+    padding: 7px;
+  }
+}
+
+@media (min-width: 768px) {
+  .rdp {
+    --rdp-cell-size: 65px;
+  }
+  
+  .rdp-button {
+    min-width: 55px;
+    min-height: 55px;
+  }
+  
+  .rtl-calendar .rdp-cell {
+    padding: 8px;
+  }
+}
+
+.rdp-day_selected {
+  background-color: var(--rdp-accent-color);
+  color: white;
+}
+
+.rdp-day_today {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: var(--rdp-background-color);
+}
+
+.rdp-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* תיקון כיוון חצים RTL */
+.rdp-nav_button_previous {
+  order: 2;
+}
+
+.rdp-nav_button_next {
+  order: 1;
+}
+
+/* החלפת תוכן החצים ל-RTL */
+.rdp-nav_button_previous svg {
+  transform: rotate(180deg);
+}
+
+.rdp-nav_button_next svg {
+  transform: rotate(180deg);
+}
+
+/* תאריכים בעבר - צבע אפור כהה */
+.rdp-day_disabled {
+  background-color: #e5e7eb !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+  opacity: 0.8 !important;
+}
+
+/* סטטיסטיקות */
+.stat-card {
+  @apply card text-center;
+}
+
+.stat-number {
+  @apply text-4xl font-bold mt-2;
+}
+
+.stat-label {
+  @apply text-lg font-semibold;
+}
+
