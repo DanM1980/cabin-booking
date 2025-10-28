@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { supabase } from '@/lib/supabase';
 import { formatDateForDB, isDateInPast, formatDateHebrew } from '@/lib/utils';
-import { DayStatus, Booking } from '@/types/database';
+import { DayStatus, Booking, GuestbookEntry as GuestbookEntryType } from '@/types/database';
 import Modal from '@/components/Modal';
 import BookingForm from '@/components/BookingForm';
 import EditBookingForm from '@/components/EditBookingForm';
+import GuestbookForm from '@/components/GuestbookForm';
+import GuestbookEntry from '@/components/GuestbookEntry';
 import Toast, { ToastType } from '@/components/Toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { he } from 'date-fns/locale';
@@ -31,6 +33,11 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+
+  // ספר אורחים
+  const [guestbookEntries, setGuestbookEntries] = useState<GuestbookEntryType[]>([]);
+  const [isGuestbookFormOpen, setIsGuestbookFormOpen] = useState(false);
+  const [isGuestbookLoading, setIsGuestbookLoading] = useState(false);
 
   // טעינת נתונים לחודש
   const loadMonthData = async (month: Date) => {
@@ -81,8 +88,33 @@ export default function HomePage() {
     }
   };
 
+  // טעינת ספר אורחים
+  const loadGuestbook = async () => {
+    try {
+      setIsGuestbookLoading(true);
+      const { data, error } = await supabase
+        .from('guestbook')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      setGuestbookEntries(data || []);
+    } catch (error) {
+      console.error('שגיאה בטעינת ספר אורחים:', error);
+      setToast({
+        message: 'שגיאה בטעינת ספר האורחים',
+        type: 'error',
+      });
+    } finally {
+      setIsGuestbookLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadMonthData(currentMonth);
+    loadGuestbook();
   }, [currentMonth]);
 
   const handleMonthChange = (month: Date) => {
@@ -256,6 +288,55 @@ export default function HomePage() {
     }
   };
 
+  const handleAddGuestbookEntry = async (data: { name: string; message: string }) => {
+    try {
+      const { error } = await supabase.from('guestbook').insert({
+        guest_name: data.name,
+        message: data.message,
+      });
+
+      if (error) throw error;
+
+      setToast({
+        message: 'ההודעה נוספה בהצלחה ✅',
+        type: 'success',
+      });
+
+      setIsGuestbookFormOpen(false);
+      await loadGuestbook();
+    } catch (error) {
+      console.error('שגיאה בהוספת הודעה:', error);
+      setToast({
+        message: 'אירעה שגיאה בהוספת ההודעה',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleDeleteGuestbookEntry = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('guestbook')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setToast({
+        message: 'ההודעה נמחקה בהצלחה ✅',
+        type: 'success',
+      });
+
+      await loadGuestbook();
+    } catch (error) {
+      console.error('שגיאה במחיקת הודעה:', error);
+      setToast({
+        message: 'אירעה שגיאה במחיקת ההודעה',
+        type: 'error',
+      });
+    }
+  };
+
   const getDayModifiers = () => {
     const openDays: Date[] = [];
     const bookedDays: Date[] = [];
@@ -354,6 +435,40 @@ export default function HomePage() {
               </div>
             )}
           </div>
+
+          {/* ספר אורחים */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">
+                📖 ספר אורחים
+              </h2>
+              <button
+                onClick={() => setIsGuestbookFormOpen(true)}
+                className="btn btn-primary"
+              >
+                ✍️ כתוב הודעה
+              </button>
+            </div>
+
+            {isGuestbookLoading ? (
+              <LoadingSpinner />
+            ) : guestbookEntries.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-lg mb-2">עדיין אין הודעות בספר האורחים</p>
+                <p className="text-sm">היה הראשון לשתף את החוויה שלך!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {guestbookEntries.map((entry) => (
+                  <GuestbookEntry
+                    key={entry.id}
+                    entry={entry}
+                    onDelete={handleDeleteGuestbookEntry}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
@@ -386,6 +501,14 @@ export default function HomePage() {
             ) : null}
           </>
         )}
+      </Modal>
+
+      {/* מודאל ספר אורחים */}
+      <Modal isOpen={isGuestbookFormOpen} onClose={() => setIsGuestbookFormOpen(false)}>
+        <GuestbookForm
+          onSubmit={handleAddGuestbookEntry}
+          onCancel={() => setIsGuestbookFormOpen(false)}
+        />
       </Modal>
 
       {/* טוסט הודעות */}

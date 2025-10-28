@@ -50,10 +50,29 @@ export type Database = {
           updated_at?: string;
         };
       };
+      guestbook: {
+        Row: {
+          id: string;
+          guest_name: string;
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          guest_name: string;
+          message: string;
+          created_at?: string;
+        };
+        Update: {
+          guest_name?: string;
+          message?: string;
+        };
+      };
     };
   };
 };
 
 export type CalendarDay = Database['public']['Tables']['calendar']['Row'];
 export type Booking = Database['public']['Tables']['bookings']['Row'];
+export type GuestbookEntry = Database['public']['Tables']['guestbook']['Row'];
 

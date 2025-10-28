@@ -28,12 +28,27 @@ CREATE TABLE IF NOT EXISTS bookings (
 CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(date);
 
 -- =====================================================
+-- טבלת ספר אורחים
+-- =====================================================
+
+CREATE TABLE guestbook (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  guest_name VARCHAR(100) NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- אינדקס לשליפה מהירה לפי תאריך
+CREATE INDEX idx_guestbook_created_at ON guestbook(created_at DESC);
+
+-- =====================================================
 -- Row Level Security (RLS) - פשוט ופתוח
 -- =====================================================
 
 -- אפשר RLS
 ALTER TABLE calendar ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE guestbook ENABLE ROW LEVEL SECURITY;
 
 -- מחיקת פוליסיות קיימות
 DROP POLICY IF EXISTS "Allow public read calendar" ON calendar;
@@ -60,6 +75,19 @@ CREATE POLICY "Allow public write bookings" ON bookings
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- Guestbook Policies - גישה מלאה לכולם!
+CREATE POLICY "Allow public read guestbook" ON guestbook
+  FOR SELECT
+  USING (true);
+
+CREATE POLICY "Allow public write guestbook" ON guestbook
+  FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Allow public delete guestbook" ON guestbook
+  FOR DELETE
+  USING (true);
 
 -- =====================================================
 -- Functions עזר
