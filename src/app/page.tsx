@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { supabase } from '@/lib/supabase';
-import { formatDateForDB, isDateInPast, formatDateHebrew, getUserData, setUserData, updateUserData, clearUserData, isAdmin, UserData } from '@/lib/utils';
+import { formatDateForDB, isDateInPast, formatDateHebrew, getUserData, setUserData, clearUserData, isAdmin, UserData } from '@/lib/utils';
 import { DayStatus, Booking, GuestbookEntry as GuestbookEntryType } from '@/types/database';
 import Modal from '@/components/Modal';
 import BookingForm from '@/components/BookingForm';
