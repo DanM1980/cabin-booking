@@ -34,12 +34,30 @@ CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(date);
 CREATE TABLE guestbook (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   guest_name VARCHAR(100) NOT NULL,
+  guest_phone VARCHAR(20) NOT NULL,
   message TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- אינדקס לשליפה מהירה לפי תאריך
 CREATE INDEX idx_guestbook_created_at ON guestbook(created_at DESC);
+
+-- =====================================================
+-- טבלת מנהלים
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS admins (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  phone VARCHAR(20) UNIQUE NOT NULL,
+  name VARCHAR(100),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- הוספת המנהלים
+INSERT INTO admins (phone, name) VALUES
+  ('052-8891082', 'דן - מנהל ראשי'),
+  ('052-5420326', 'סיון עוז - מנהל')
+ON CONFLICT (phone) DO NOTHING;
 
 -- =====================================================
 -- Row Level Security (RLS) - פשוט ופתוח
@@ -49,6 +67,7 @@ CREATE INDEX idx_guestbook_created_at ON guestbook(created_at DESC);
 ALTER TABLE calendar ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE guestbook ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 
 -- מחיקת פוליסיות קיימות
 DROP POLICY IF EXISTS "Allow public read calendar" ON calendar;
@@ -87,6 +106,11 @@ CREATE POLICY "Allow public write guestbook" ON guestbook
 
 CREATE POLICY "Allow public delete guestbook" ON guestbook
   FOR DELETE
+  USING (true);
+
+-- Admins Policies - קריאה בלבד (כדי לבדוק מי מנהל)
+CREATE POLICY "Allow public read admins" ON admins
+  FOR SELECT
   USING (true);
 
 -- =====================================================

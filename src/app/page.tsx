@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { supabase } from '@/lib/supabase';
-import { formatDateForDB, isDateInPast, formatDateHebrew } from '@/lib/utils';
+import { formatDateForDB, isDateInPast, formatDateHebrew, getUserPhone, setUserPhone, clearUserPhone, isAdmin } from '@/lib/utils';
 import { DayStatus, Booking, GuestbookEntry as GuestbookEntryType } from '@/types/database';
 import Modal from '@/components/Modal';
 import BookingForm from '@/components/BookingForm';
@@ -41,6 +41,10 @@ export default function HomePage() {
 
   // מעקב אחרי מצב פופאפים לטיפול בכפתור חזור
   const [hasModalHistoryEntry, setHasModalHistoryEntry] = useState(false);
+
+  // משתמש ומנהל
+  const [userPhone, setUserPhoneState] = useState<string | null>(null);
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
 
   // טעינת נתונים לחודש
   const loadMonthData = async (month: Date) => {
@@ -114,6 +118,16 @@ export default function HomePage() {
       setIsGuestbookLoading(false);
     }
   };
+
+  // זיהוי משתמש אוטומטי בטעינת הדף
+  useEffect(() => {
+    const phone = getUserPhone();
+    if (phone) {
+      setUserPhoneState(phone);
+      // בדיקה אם מנהל
+      isAdmin(phone).then(setIsUserAdmin);
+    }
+  }, []);
 
   useEffect(() => {
     loadMonthData(currentMonth);
@@ -256,6 +270,20 @@ export default function HomePage() {
       return;
     }
 
+    // בדיקת הרשאות אם היום מוזמן
+    if (dayInfo.status === 'booked' && dayInfo.booking) {
+      // בדיקה אם המשתמש יכול לערוך (בעל ההזמנה או מנהל)
+      const canEdit = isUserAdmin || dayInfo.booking.guest_phone === userPhone;
+
+      if (!canEdit) {
+        setToast({
+          message: 'היום מוזמן על ידי משתמש אחר',
+          type: 'error',
+        });
+        return;
+      }
+    }
+
     setSelectedDate(date);
     setSelectedDateInfo(dayInfo);
     setIsModalOpen(true);
@@ -270,6 +298,13 @@ export default function HomePage() {
 
     try {
       const dateStr = formatDateForDB(selectedDate);
+
+      // שמירת הטלפון ב-localStorage
+      setUserPhone(bookingData.phone);
+      setUserPhoneState(bookingData.phone);
+      // בדיקה אם מנהל
+      const adminStatus = await isAdmin(bookingData.phone);
+      setIsUserAdmin(adminStatus);
 
       // יצירת הזמנה
       // @ts-ignore
@@ -396,11 +431,21 @@ export default function HomePage() {
     }
   };
 
-  const handleAddGuestbookEntry = async (data: { name: string; message: string }) => {
+  const handleAddGuestbookEntry = async (data: { name: string; phone: string; message: string }) => {
     try {
+      // שמירת הטלפון אם זו הפעם הראשונה
+      if (!userPhone && data.phone) {
+        setUserPhone(data.phone);
+        setUserPhoneState(data.phone);
+        // בדיקה אם מנהל
+        const adminStatus = await isAdmin(data.phone);
+        setIsUserAdmin(adminStatus);
+      }
+
       // @ts-ignore
       const { error } = await supabase.from('guestbook').insert({
         guest_name: data.name,
+        guest_phone: data.phone || userPhone,
         message: data.message,
       });
 
@@ -422,8 +467,19 @@ export default function HomePage() {
     }
   };
 
-  const handleDeleteGuestbookEntry = async (id: string) => {
+  const handleDeleteGuestbookEntry = async (id: string, entryPhone: string) => {
     try {
+      // בדיקת הרשאות
+      const canDelete = isUserAdmin || entryPhone === userPhone;
+
+      if (!canDelete) {
+        setToast({
+          message: 'אין לך הרשאה למחוק הודעה זו',
+          type: 'error',
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('guestbook')
         .delete()
@@ -471,10 +527,34 @@ export default function HomePage() {
       {/* הדר עם שקיפות */}
       <header className="header">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-center text-gray-900">
-            נופש בארי בגולן
-          </h1>
-          <p className="text-center text-gray-600 mt-2">
+          <div className="relative mb-2">
+            {/* פרטי משתמש - צמוד לשמאל */}
+            {userPhone && (
+              <div className="absolute left-0 top-0 flex flex-col gap-0.5">
+                <span className={`text-xs font-semibold whitespace-nowrap ${isUserAdmin ? 'text-amber-600' : 'text-gray-700'}`}>
+                  {isUserAdmin && '👑 '}{userPhone}
+                </span>
+                <button
+                  onClick={() => {
+                    clearUserPhone();
+                    setUserPhoneState(null);
+                    setIsUserAdmin(false);
+                    window.location.reload();
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline text-left"
+                >
+                  התנתק
+                </button>
+              </div>
+            )}
+
+            {/* כותרת - במרכז */}
+            <h1 className="text-3xl font-bold text-center text-gray-900">
+              נופש בארי בגולן
+            </h1>
+          </div>
+
+          <p className="text-center text-gray-600">
             בחר תאריך להזמנה או לעריכה
           </p>
         </div>
@@ -582,7 +662,8 @@ export default function HomePage() {
                   <GuestbookEntry
                     key={entry.id}
                     entry={entry}
-                    onDelete={handleDeleteGuestbookEntry}
+                    canDelete={isUserAdmin || entry.guest_phone === userPhone}
+                    onDelete={() => handleDeleteGuestbookEntry(entry.id, entry.guest_phone)}
                   />
                 ))}
               </div>
@@ -627,6 +708,7 @@ export default function HomePage() {
         <GuestbookForm
           onSubmit={handleAddGuestbookEntry}
           onCancel={() => setIsGuestbookFormOpen(false)}
+          initialPhone={userPhone}
         />
       </Modal>
 

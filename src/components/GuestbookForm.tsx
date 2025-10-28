@@ -3,19 +3,21 @@
 import { useState } from 'react';
 
 interface GuestbookFormProps {
-  onSubmit: (data: { name: string; message: string }) => Promise<void>;
+  onSubmit: (data: { name: string; phone: string; message: string }) => Promise<void>;
   onCancel: () => void;
+  initialPhone?: string | null;
 }
 
-export default function GuestbookForm({ onSubmit, onCancel }: GuestbookFormProps) {
+export default function GuestbookForm({ onSubmit, initialPhone, onCancel }: GuestbookFormProps) {
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState(initialPhone || '');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !message.trim()) {
+    if (!name.trim() || !phone.trim() || !message.trim()) {
       return;
     }
 
@@ -23,9 +25,11 @@ export default function GuestbookForm({ onSubmit, onCancel }: GuestbookFormProps
     try {
       await onSubmit({
         name: name.trim(),
+        phone: phone.trim(),
         message: message.trim(),
       });
       setName('');
+      setPhone('');
       setMessage('');
     } finally {
       setIsLoading(false);
@@ -69,6 +73,25 @@ export default function GuestbookForm({ onSubmit, onCancel }: GuestbookFormProps
           />
         </div>
 
+        {!initialPhone && (
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium mb-1 text-gray-700">
+              טלפון *
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              maxLength={20}
+              className="input"
+              placeholder="050-1234567"
+              required
+              disabled={isLoading}
+            />
+          </div>
+        )}
+
         <div>
           <label htmlFor="message" className="block text-sm font-medium mb-1 text-gray-700">
             הודעה *
@@ -92,7 +115,7 @@ export default function GuestbookForm({ onSubmit, onCancel }: GuestbookFormProps
         <div className="pt-4">
           <button
             type="submit"
-            disabled={isLoading || !name.trim() || !message.trim()}
+            disabled={isLoading || !name.trim() || !phone.trim() || !message.trim()}
             className="btn btn-primary w-full"
           >
             {isLoading ? 'שולח...' : 'שלח הודעה'}

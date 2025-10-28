@@ -9,7 +9,10 @@
 - 🟢 **ירוק** = יום פנוי (לחיצה תפתח טופס הזמנה)
 - 🔴 **אדום** = יום מוזמן (לחיצה תאפשר עריכה או ביטול)
 - ⚪ **אפור** = יום סגור (לא ניתן להזמין)
-- ✏️ עריכת הזמנות קיימות
+- 🔐 **זיהוי משתמשים לפי טלפון** (localStorage)
+- 👑 **מנהלים** - יכולים לערוך ולמחוק הכל
+- 👤 **משתמשים רגילים** - רק את שלהם
+- ✏️ עריכת הזמנות קיימות (רק שלך או כמנהל)
 - ❌ ביטול הזמנות (עם אישור)
 - 📖 ספר אורחים (כתיבת הודעות + מחיקה)
 - ⚡ **עדכונים בזמן אמת** (Realtime!)
@@ -80,15 +83,46 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 
 ### 5. הפעלת Realtime (חשוב!)
 
-עבור ל-Supabase Dashboard → **Database** → **Replication**
-הפעל Realtime עבור:
+עבור ל-Supabase Dashboard → **Database** → **Table Editor**  
+בחר כל טבלה והפעל **Enable Realtime**:
 - ✅ `calendar`
 - ✅ `bookings`
 - ✅ `guestbook`
 
 **תיעוד מלא:** `SUPABASE-REALTIME-SETUP.md`
 
-### 6. הרצה!
+### 6. הגדרת ניהול משתמשים (חשוב!)
+
+הרץ SQL ב-Supabase כדי ליצור את טבלת המנהלים:
+
+```sql
+-- הוספת guest_phone לספר אורחים
+ALTER TABLE guestbook 
+ADD COLUMN IF NOT EXISTS guest_phone VARCHAR(20) NOT NULL DEFAULT 'אנונימי';
+
+-- טבלת מנהלים
+CREATE TABLE IF NOT EXISTS admins (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  phone VARCHAR(20) UNIQUE NOT NULL,
+  name VARCHAR(100),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- הוספת המנהלים (עדכן את הטלפונים!)
+INSERT INTO admins (phone, name) VALUES
+  ('052-8891082', 'דן - מנהל ראשי'),
+  ('052-5420326', 'סיון עוז - מנהל')
+ON CONFLICT (phone) DO NOTHING;
+
+-- RLS
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read admins" ON admins
+  FOR SELECT USING (true);
+```
+
+**תיעוד מלא:** `USER-MANAGEMENT-SETUP.md`
+
+### 7. הרצה!
 
 ```bash
 npm run dev
@@ -125,17 +159,32 @@ cabin-booking/
 └── package.json
 ```
 
-## 🔐 אבטחה פשוטה
+## 🔐 אבטחה ומשתמשים
 
-### סיסמת מנהל
-**סיסמה**: `fatlady` (מוגדרת ב-`src/lib/constants.ts`)
+### 👥 ניהול משתמשים
+
+המערכת מזהה משתמשים לפי **מספר טלפון** (נשמר ב-localStorage):
+
+**שני סוגי משתמשים:**
+1. **👑 מנהלים** - יכולים לערוך/למחוק הכל (טלפונים בטבלת `admins`)
+2. **👤 משתמשים רגילים** - רק את ההזמנות/הודעות שלהם
+
+**זרימה:**
+1. משתמש ממלא טופס הזמנה → הטלפון נשמר
+2. בפעם הבאה המערכת מזהה אותו אוטומטית
+3. יכול לערוך רק את ההזמנות שביצע (אלא אם הוא מנהל)
+
+**להוסיף/להסיר מנהלים:** ראה `USER-MANAGEMENT-SETUP.md`
+
+### 🔒 סיסמת מנהל דשבורד
+
+**סיסמת `/admin`**: `fatlady` (מוגדרת ב-`src/lib/constants.ts`)
 
 ### שמירת מצב
-- **sessionStorage** (לא localStorage)
-- נמחק בסגירת טאב/דפדפן
-- צד-קליינט בלבד
+- **Admin**: sessionStorage (נמחק בסגירת טאב)
+- **משתמש**: localStorage (נשאר עד התנתקות)
 
-### לשנות סיסמה
+### לשנות סיסמת דשבורד
 ערוך `src/lib/constants.ts`:
 
 ```typescript
@@ -161,8 +210,26 @@ guest_phone  TEXT
 guest_email  TEXT (optional)
 ```
 
+**guestbook**
+```sql
+id           UUID PRIMARY KEY
+guest_name   VARCHAR(100)
+guest_phone  VARCHAR(20)  -- NEW!
+message      TEXT
+created_at   TIMESTAMPTZ
+```
+
+**admins** (NEW!)
+```sql
+id           UUID PRIMARY KEY
+phone        VARCHAR(20) UNIQUE
+name         VARCHAR(100)
+created_at   TIMESTAMPTZ
+```
+
 ### RLS (Row Level Security)
-- ✅ גישה מלאה לכולם (public)
+- ✅ גישה מלאה לכולם (public) ל-calendar, bookings, guestbook
+- ✅ קריאה בלבד ל-admins (כדי לבדוק מי מנהל)
 - פשוט וללא סיבוכים
 - מתאים למערכת קטנה
 

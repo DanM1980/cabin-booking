@@ -54,18 +54,39 @@ export type Database = {
         Row: {
           id: string;
           guest_name: string;
+          guest_phone: string;
           message: string;
           created_at: string;
         };
         Insert: {
           id?: string;
           guest_name: string;
+          guest_phone: string;
           message: string;
           created_at?: string;
         };
         Update: {
           guest_name?: string;
+          guest_phone?: string;
           message?: string;
+        };
+      };
+      admins: {
+        Row: {
+          id: string;
+          phone: string;
+          name: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          phone: string;
+          name?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          phone?: string;
+          name?: string | null;
         };
       };
     };
@@ -75,4 +96,5 @@ export type Database = {
 export type CalendarDay = Database['public']['Tables']['calendar']['Row'];
 export type Booking = Database['public']['Tables']['bookings']['Row'];
 export type GuestbookEntry = Database['public']['Tables']['guestbook']['Row'];
+export type Admin = Database['public']['Tables']['admins']['Row'];
 
