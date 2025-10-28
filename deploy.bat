@@ -13,13 +13,13 @@ REM הגדרות
 set TARGET_PROJECT=C:\Users\DanM\Documents\React\Ella\ahuzat-haela
 set TARGET_SUBDIR=beeri
 
-echo [1/7] Checking target project...
+echo [1/8] Checking target project...
 if not exist "%TARGET_PROJECT%" (
     echo ERROR: Target project not found at %TARGET_PROJECT%
     exit /b 1
 )
 
-echo [2/7] Pulling latest changes from remote...
+echo [2/8] Pulling latest changes from remote...
 cd /d "%TARGET_PROJECT%"
 git pull origin gh-pages
 if errorlevel 1 (
@@ -27,7 +27,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [3/7] Building current project...
+echo [3/8] Building current project...
 cd /d "%~dp0"
 call npm run build
 if errorlevel 1 (
@@ -35,27 +35,35 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [4/7] Cleaning target directory...
+echo [4/8] Cleaning target directory...
 if exist "%TARGET_PROJECT%\%TARGET_SUBDIR%" (
     rmdir /s /q "%TARGET_PROJECT%\%TARGET_SUBDIR%"
 )
 
-echo [5/7] Copying build files...
+echo [5/8] Copying build files...
 xcopy /E /I /Y "out" "%TARGET_PROJECT%\%TARGET_SUBDIR%"
 if errorlevel 1 (
     echo ERROR: Failed to copy files
     exit /b 1
 )
 
-echo [6/7] Creating .nojekyll file (for GitHub Pages)...
+echo [6/8] Creating .nojekyll file (for GitHub Pages)...
 type nul > "%TARGET_PROJECT%\%TARGET_SUBDIR%\.nojekyll"
 if errorlevel 1 (
-    echo WARNING: Failed to create .nojekyll file
+    echo WARNING: Failed to create .nojekyll file in subdirectory
 )
 
-echo [7/7] Committing and pushing changes...
+echo [7/8] Checking .nojekyll in project root...
+if not exist "%TARGET_PROJECT%\.nojekyll" (
+    echo Creating .nojekyll in project root...
+    type nul > "%TARGET_PROJECT%\.nojekyll"
+) else (
+    echo .nojekyll already exists in project root
+)
+
+echo [8/8] Committing and pushing changes...
 cd /d "%TARGET_PROJECT%"
-git add %TARGET_SUBDIR%
+git add %TARGET_SUBDIR% .nojekyll
 git commit -m "Update beeri - cabin booking system"
 git push origin gh-pages
 if errorlevel 1 (

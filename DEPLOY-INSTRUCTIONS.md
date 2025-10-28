@@ -29,9 +29,13 @@ npm run deploy
 ✓ מעתיק את `out/` → `ahuzat-haela/beeri/`
 
 ### שלב 6: יצירת .nojekyll
-✓ יוצר קובץ `.nojekyll` (מונע מ-GitHub Pages להתעלם מתיקיות `_next`)
+✓ יוצר קובץ `.nojekyll` בתת-ספריה `beeri/`
 
-### שלב 7: Commit & Push
+### שלב 7: בדיקת .nojekyll בשורש
+✓ בודק אם `.nojekyll` קיים בשורש הפרויקט היעד
+✓ אם לא קיים - יוצר אותו (קריטי ל-GitHub Pages!)
+
+### שלב 8: Commit & Push
 ✓ עושה commit ו-push ל-`gh-pages`
 
 ---
