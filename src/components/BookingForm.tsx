@@ -1,18 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { formatDateHebrew, isValidIsraeliPhone, isValidEmail } from '@/lib/utils';
+import { formatDateHebrew, isValidIsraeliPhone, isValidEmail, UserData } from '@/lib/utils';
 
 interface BookingFormProps {
   date: Date;
   onSubmit: (data: { name: string; phone: string; email?: string }) => Promise<void>;
   onCancel: () => void;
+  initialUserData?: UserData | null;
 }
 
-export default function BookingForm({ date, onSubmit, onCancel }: BookingFormProps) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+export default function BookingForm({ date, onSubmit, onCancel, initialUserData }: BookingFormProps) {
+  const [name, setName] = useState(initialUserData?.name || '');
+  const [phone, setPhone] = useState(initialUserData?.phone || '');
+  const [email, setEmail] = useState(initialUserData?.email || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 

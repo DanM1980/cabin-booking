@@ -1,16 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { UserData } from '@/lib/utils';
 
 interface GuestbookFormProps {
   onSubmit: (data: { name: string; phone: string; message: string }) => Promise<void>;
   onCancel: () => void;
-  initialPhone?: string | null;
+  initialUserData?: UserData | null;
 }
 
-export default function GuestbookForm({ onSubmit, initialPhone, onCancel }: GuestbookFormProps) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState(initialPhone || '');
+export default function GuestbookForm({ onSubmit, initialUserData, onCancel }: GuestbookFormProps) {
+  const [name, setName] = useState(initialUserData?.name || '');
+  const [phone, setPhone] = useState(initialUserData?.phone || '');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -73,7 +74,7 @@ export default function GuestbookForm({ onSubmit, initialPhone, onCancel }: Gues
           />
         </div>
 
-        {!initialPhone && (
+        {!initialUserData && (
           <div>
             <label htmlFor="phone" className="block text-sm font-medium mb-1 text-gray-700">
               טלפון *

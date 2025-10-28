@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { supabase } from '@/lib/supabase';
-import { formatDateForDB, isDateInPast, formatDateHebrew, getUserPhone, setUserPhone, clearUserPhone, isAdmin } from '@/lib/utils';
+import { formatDateForDB, isDateInPast, formatDateHebrew, getUserData, setUserData, updateUserData, clearUserData, isAdmin, UserData } from '@/lib/utils';
 import { DayStatus, Booking, GuestbookEntry as GuestbookEntryType } from '@/types/database';
 import Modal from '@/components/Modal';
 import BookingForm from '@/components/BookingForm';
 import EditBookingForm from '@/components/EditBookingForm';
 import GuestbookForm from '@/components/GuestbookForm';
 import GuestbookEntry from '@/components/GuestbookEntry';
+import LoginModal from '@/components/LoginModal';
 import Toast, { ToastType } from '@/components/Toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { he } from 'date-fns/locale';
@@ -43,8 +44,13 @@ export default function HomePage() {
   const [hasModalHistoryEntry, setHasModalHistoryEntry] = useState(false);
 
   // משתמש ומנהל
-  const [userPhone, setUserPhoneState] = useState<string | null>(null);
+  const [userData, setUserDataState] = useState<UserData | null>(null);
   const [isUserAdmin, setIsUserAdmin] = useState(false);
+
+  // Login Modal
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'book' | 'guestbook' | null>(null);
 
   // טעינת נתונים לחודש
   const loadMonthData = async (month: Date) => {
@@ -121,11 +127,11 @@ export default function HomePage() {
 
   // זיהוי משתמש אוטומטי בטעינת הדף
   useEffect(() => {
-    const phone = getUserPhone();
-    if (phone) {
-      setUserPhoneState(phone);
+    const data = getUserData();
+    if (data) {
+      setUserDataState(data);
       // בדיקה אם מנהל
-      isAdmin(phone).then(setIsUserAdmin);
+      isAdmin(data.phone).then(setIsUserAdmin);
     }
   }, []);
 
@@ -273,7 +279,7 @@ export default function HomePage() {
     // בדיקת הרשאות אם היום מוזמן
     if (dayInfo.status === 'booked' && dayInfo.booking) {
       // בדיקה אם המשתמש יכול לערוך (בעל ההזמנה או מנהל)
-      const canEdit = isUserAdmin || dayInfo.booking.guest_phone === userPhone;
+      const canEdit = isUserAdmin || dayInfo.booking.guest_phone === userData?.phone;
 
       if (!canEdit) {
         setToast({
@@ -284,6 +290,16 @@ export default function HomePage() {
       }
     }
 
+    // Lazy Auth - יום פנוי ומשתמש לא מחובר
+    if (dayInfo.status === 'open' && !userData) {
+      setSelectedDate(date);
+      setSelectedDateInfo(dayInfo);
+      setPendingAction('book');
+      setIsLoginModalOpen(true);
+      return;
+    }
+
+    // משתמש מחובר או יום מוזמן - פתיחת המודאל
     setSelectedDate(date);
     setSelectedDateInfo(dayInfo);
     setIsModalOpen(true);
@@ -299,12 +315,26 @@ export default function HomePage() {
     try {
       const dateStr = formatDateForDB(selectedDate);
 
-      // שמירת הטלפון ב-localStorage
-      setUserPhone(bookingData.phone);
-      setUserPhoneState(bookingData.phone);
-      // בדיקה אם מנהל
-      const adminStatus = await isAdmin(bookingData.phone);
-      setIsUserAdmin(adminStatus);
+      // עדכון userData אם השתנה משהו
+      if (userData) {
+        const hasChanged =
+          userData.name !== bookingData.name ||
+          userData.phone !== bookingData.phone ||
+          userData.email !== bookingData.email;
+
+        if (hasChanged) {
+          const newUserData: UserData = {
+            name: bookingData.name,
+            phone: bookingData.phone,
+            email: bookingData.email,
+          };
+          setUserData(newUserData);
+          setUserDataState(newUserData);
+          // בדיקה מחדש אם מנהל
+          const adminStatus = await isAdmin(bookingData.phone);
+          setIsUserAdmin(adminStatus);
+        }
+      }
 
       // יצירת הזמנה
       // @ts-ignore
@@ -433,19 +463,27 @@ export default function HomePage() {
 
   const handleAddGuestbookEntry = async (data: { name: string; phone: string; message: string }) => {
     try {
-      // שמירת הטלפון אם זו הפעם הראשונה
-      if (!userPhone && data.phone) {
-        setUserPhone(data.phone);
-        setUserPhoneState(data.phone);
-        // בדיקה אם מנהל
-        const adminStatus = await isAdmin(data.phone);
-        setIsUserAdmin(adminStatus);
+      // עדכון userData אם השתנה משהו
+      if (userData) {
+        const hasChanged =
+          userData.name !== data.name ||
+          userData.phone !== data.phone;
+
+        if (hasChanged) {
+          const newUserData: UserData = {
+            name: data.name,
+            phone: data.phone,
+            email: userData.email,
+          };
+          setUserData(newUserData);
+          setUserDataState(newUserData);
+        }
       }
 
       // @ts-ignore
       const { error } = await supabase.from('guestbook').insert({
         guest_name: data.name,
-        guest_phone: data.phone || userPhone,
+        guest_phone: data.phone,
         message: data.message,
       });
 
@@ -470,7 +508,7 @@ export default function HomePage() {
   const handleDeleteGuestbookEntry = async (id: string, entryPhone: string) => {
     try {
       // בדיקת הרשאות
-      const canDelete = isUserAdmin || entryPhone === userPhone;
+      const canDelete = isUserAdmin || entryPhone === userData?.phone;
 
       if (!canDelete) {
         setToast({
@@ -502,6 +540,66 @@ export default function HomePage() {
     }
   };
 
+  // Login Modal Handlers
+  const handleLoginSubmit = async (newUserData: UserData) => {
+    setUserData(newUserData);
+    setUserDataState(newUserData);
+
+    // בדיקה אם מנהל
+    const adminStatus = await isAdmin(newUserData.phone);
+    setIsUserAdmin(adminStatus);
+
+    setIsLoginModalOpen(false);
+
+    // המשך לפעולה שהייתה ממתינה
+    if (pendingAction === 'book' && selectedDate) {
+      setIsModalOpen(true);
+    } else if (pendingAction === 'guestbook') {
+      setIsGuestbookFormOpen(true);
+    }
+
+    setPendingAction(null);
+  };
+
+  const handleLoginCancel = () => {
+    setIsLoginModalOpen(false);
+    setPendingAction(null);
+    setSelectedDate(undefined);
+    setSelectedDateInfo(null);
+  };
+
+  const handleEditUserData = async (newUserData: UserData) => {
+    setUserData(newUserData);
+    setUserDataState(newUserData);
+
+    // בדיקה מחדש אם מנהל
+    const adminStatus = await isAdmin(newUserData.phone);
+    setIsUserAdmin(adminStatus);
+
+    setIsEditModalOpen(false);
+
+    setToast({
+      message: 'הפרטים עודכנו בהצלחה ✅',
+      type: 'success',
+    });
+  };
+
+  const handleLogout = () => {
+    clearUserData();
+    setUserDataState(null);
+    setIsUserAdmin(false);
+    window.location.reload();
+  };
+
+  const handleGuestbookClick = () => {
+    if (!userData) {
+      setPendingAction('guestbook');
+      setIsLoginModalOpen(true);
+    } else {
+      setIsGuestbookFormOpen(true);
+    }
+  };
+
   const getDayModifiers = () => {
     const openDays: Date[] = [];
     const bookedDays: Date[] = [];
@@ -529,18 +627,19 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-6">
           <div className="relative mb-2">
             {/* פרטי משתמש - צמוד לשמאל */}
-            {userPhone && (
-              <div className="absolute left-0 top-0 flex flex-col gap-0.5">
-                <span className={`text-xs font-semibold whitespace-nowrap ${isUserAdmin ? 'text-amber-600' : 'text-gray-700'}`}>
-                  {isUserAdmin && '👑 '}{userPhone}
+            {userData && (
+              <div className="absolute left-0 top-0 flex flex-col gap-1">
+                <span className={`text-sm font-semibold whitespace-nowrap ${isUserAdmin ? 'text-amber-600' : 'text-gray-700'}`}>
+                  {isUserAdmin && '👑 '}{userData.name}
                 </span>
                 <button
-                  onClick={() => {
-                    clearUserPhone();
-                    setUserPhoneState(null);
-                    setIsUserAdmin(false);
-                    window.location.reload();
-                  }}
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline text-left"
+                >
+                  ערוך פרטים
+                </button>
+                <button
+                  onClick={handleLogout}
                   className="text-xs text-gray-500 hover:text-gray-700 underline text-left"
                 >
                   התנתק
@@ -636,7 +735,7 @@ export default function HomePage() {
                 📖 ספר אורחים
               </h2>
               <button
-                onClick={() => setIsGuestbookFormOpen(true)}
+                onClick={handleGuestbookClick}
                 className="btn btn-primary"
               >
                 ✍️ כתוב הודעה
@@ -662,7 +761,7 @@ export default function HomePage() {
                   <GuestbookEntry
                     key={entry.id}
                     entry={entry}
-                    canDelete={isUserAdmin || entry.guest_phone === userPhone}
+                    canDelete={isUserAdmin || entry.guest_phone === userData?.phone}
                     onDelete={() => handleDeleteGuestbookEntry(entry.id, entry.guest_phone)}
                   />
                 ))}
@@ -685,6 +784,7 @@ export default function HomePage() {
                   setSelectedDate(undefined);
                   setSelectedDateInfo(null);
                 }}
+                initialUserData={userData}
               />
             ) : selectedDateInfo.status === 'booked' && selectedDateInfo.booking ? (
               <EditBookingForm
@@ -708,9 +808,26 @@ export default function HomePage() {
         <GuestbookForm
           onSubmit={handleAddGuestbookEntry}
           onCancel={() => setIsGuestbookFormOpen(false)}
-          initialPhone={userPhone}
+          initialUserData={userData}
         />
       </Modal>
+
+      {/* מודאל התחברות */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={handleLoginCancel}
+        onSubmit={handleLoginSubmit}
+        mode="login"
+      />
+
+      {/* מודאל עריכת פרטים */}
+      <LoginModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditUserData}
+        mode="edit"
+        initialData={userData}
+      />
 
       {/* טוסט הודעות */}
       {toast && (

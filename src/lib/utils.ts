@@ -67,11 +67,39 @@ export async function isAdmin(phone: string | null): Promise<boolean> {
   if (!phone) return false;
   
   try {
-    const { data, error } = await supabase
+    // ננסה עם הטלפון כמו שהוא
+    let { data, error } = await supabase
       .from('admins')
       .select('id')
       .eq('phone', phone)
-      .single();
+      .maybeSingle();
+    
+    // אם לא מצאנו, ננסה עם הטלפון בפורמט נקי (ללא מקפים)
+    if (!data && !error) {
+      const cleanPhone = phone.replace(/[\s-]/g, '');
+      const result = await supabase
+        .from('admins')
+        .select('id')
+        .eq('phone', cleanPhone)
+        .maybeSingle();
+      data = result.data;
+      error = result.error;
+    }
+    
+    // אם לא מצאנו, ננסה עם הטלפון עם מקפים בפורמט 050-1234567
+    if (!data && !error && phone.length >= 10) {
+      const cleanPhone = phone.replace(/[\s-]/g, '');
+      if (cleanPhone.length === 10) {
+        const formattedPhone = `${cleanPhone.slice(0, 3)}-${cleanPhone.slice(3)}`;
+        const result = await supabase
+          .from('admins')
+          .select('id')
+          .eq('phone', formattedPhone)
+          .maybeSingle();
+        data = result.data;
+        error = result.error;
+      }
+    }
     
     return !!data && !error;
   } catch (error) {
@@ -81,6 +109,64 @@ export async function isAdmin(phone: string | null): Promise<boolean> {
 }
 
 /**
+ * טיפוס נתוני משתמש
+ */
+export interface UserData {
+  name: string;
+  phone: string;
+  email?: string;
+}
+
+/**
+ * שמירת נתוני משתמש מלאים
+ */
+export function setUserData(userData: UserData): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('userData', JSON.stringify(userData));
+    // שמירה גם בפורמט הישן לתאימות לאחור
+    localStorage.setItem('userPhone', userData.phone);
+  }
+}
+
+/**
+ * קבלת נתוני משתמש מלאים
+ */
+export function getUserData(): UserData | null {
+  if (typeof window !== 'undefined') {
+    const data = localStorage.getItem('userData');
+    if (data) {
+      try {
+        return JSON.parse(data);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * עדכון נתוני משתמש (חלקי)
+ */
+export function updateUserData(partial: Partial<UserData>): void {
+  const current = getUserData();
+  if (current) {
+    setUserData({ ...current, ...partial });
+  }
+}
+
+/**
+ * מחיקת נתוני משתמש (התנתקות)
+ */
+export function clearUserData(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('userData');
+    localStorage.removeItem('userPhone'); // מחיקה גם מהפורמט הישן
+  }
+}
+
+/**
+ * @deprecated - השתמש ב-getUserData() במקום
  * שמירת טלפון משתמש
  */
 export function setUserPhone(phone: string): void {
@@ -90,21 +176,25 @@ export function setUserPhone(phone: string): void {
 }
 
 /**
+ * @deprecated - השתמש ב-getUserData() במקום
  * קבלת טלפון משתמש
  */
 export function getUserPhone(): string | null {
   if (typeof window !== 'undefined') {
+    // ננסה קודם userData החדש
+    const userData = getUserData();
+    if (userData) return userData.phone;
+    // נפילה לפורמט הישן
     return localStorage.getItem('userPhone');
   }
   return null;
 }
 
 /**
+ * @deprecated - השתמש ב-clearUserData() במקום
  * מחיקת טלפון משתמש (התנתקות)
  */
 export function clearUserPhone(): void {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('userPhone');
-  }
+  clearUserData();
 }
 
