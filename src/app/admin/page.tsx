@@ -73,7 +73,7 @@ export default function AdminPage() {
       if (error) throw error;
 
       const newMap = new Map<string, DayStatus>();
-      (data || []).forEach((day) => {
+      (data || []).forEach((day: any) => {
         newMap.set(day.date, day.status as DayStatus);
       });
 
@@ -89,7 +89,7 @@ export default function AdminPage() {
       if (bookingsError) throw bookingsError;
 
       const newBookingsMap = new Map<string, Booking>();
-      (bookingsData || []).forEach((booking) => {
+      (bookingsData || []).forEach((booking: any) => {
         newBookingsMap.set(booking.date, booking);
       });
 
@@ -112,9 +112,9 @@ export default function AdminPage() {
       if (error) throw error;
 
       const stats = {
-        open: (data || []).filter((d) => d.status === 'open').length,
-        booked: (data || []).filter((d) => d.status === 'booked').length,
-        closed: (data || []).filter((d) => d.status === 'closed').length,
+        open: (data || []).filter((d: any) => d.status === 'open').length,
+        booked: (data || []).filter((d: any) => d.status === 'booked').length,
+        closed: (data || []).filter((d: any) => d.status === 'closed').length,
       };
 
       setStats(stats);
@@ -138,6 +138,7 @@ export default function AdminPage() {
         status: 'open' as DayStatus,
       }));
 
+      // @ts-ignore
       const { error } = await supabase.from('calendar').upsert(updates);
 
       if (error) throw error;
@@ -189,6 +190,7 @@ export default function AdminPage() {
         status: 'closed' as DayStatus,
       }));
 
+      // @ts-ignore
       const { error } = await supabase.from('calendar').upsert(updates);
 
       if (error) throw error;
